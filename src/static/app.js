@@ -4,6 +4,75 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  let undoTimeoutId = null;
+  let lastUndoAction = null;
+
+  function prettifyParticipantName(email) {
+    const local = email.split("@")[0];
+    return local
+      .replace(/[._-]+/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  function clearMessage() {
+    if (undoTimeoutId) {
+      clearTimeout(undoTimeoutId);
+      undoTimeoutId = null;
+    }
+    messageDiv.classList.add('hidden');
+    messageDiv.textContent = '';
+    messageDiv.innerHTML = '';
+    lastUndoAction = null;
+  }
+
+  function showMessage(text, type = 'success') {
+    clearMessage();
+    messageDiv.textContent = text;
+    messageDiv.className = type;
+    messageDiv.classList.remove('hidden');
+    undoTimeoutId = setTimeout(() => clearMessage(), 5000);
+  }
+
+  async function undoUnregister(activity, email) {
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activity)}/signup?email=${encodeURIComponent(email)}`,
+        { method: 'POST' }
+      );
+      const result = await response.json();
+
+      if (response.ok) {
+        showMessage(`撤销成功：${prettifyParticipantName(email)} 已重新注册`, 'success');
+        fetchActivities();
+      } else {
+        showMessage(result.detail || '撤销失败，请稍后重试', 'error');
+      }
+    } catch (error) {
+      console.error('Error undoing unregister:', error);
+      showMessage('撤销失败，请稍后重试', 'error');
+    }
+  }
+
+  function showUndoMessage(text, activity, email) {
+    clearMessage();
+    lastUndoAction = { activity, email };
+    messageDiv.innerHTML = `${text} <button id="undo-button" class="undo-button">撤销</button>`;
+    messageDiv.className = 'success';
+    messageDiv.classList.remove('hidden');
+
+    const undoButton = messageDiv.querySelector('#undo-button');
+    if (undoButton) {
+      undoButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        undoUnregister(activity, email);
+      });
+    }
+
+    undoTimeoutId = setTimeout(() => clearMessage(), 5000);
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -22,9 +91,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const spotsLeft = details.max_participants - details.participants.length;
 
         const participantCount = Array.isArray(details.participants) ? details.participants.length : 0;
-        const participantSummary = participantCount > 0
-          ? `${participantCount} people already registered`
-          : "No one has joined yet — be the first!";
+        const participantsHtml = participantCount > 0
+          ? `
+            <div class="participants-section">
+              <h5>Participants</h5>
+              <ul class="participants-list">
+                ${details.participants.map(p => `<li class="participant-item"><span>${prettifyParticipantName(p)}</span><button class="participant-remove" data-activity="${name}" data-email="${encodeURIComponent(p)}" title="Unregister participant">✕</button></li>`).join('')}
+              </ul>
+            </div>
+          `
+          : `
+            <div class="participants-section no-participants">
+              <h5>Participants</h5>
+              <p>No one has joined yet — be the first!</p>
+            </div>
+          `;
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
@@ -33,8 +114,31 @@ document.addEventListener("DOMContentLoaded", () => {
             <span><strong>Schedule:</strong> ${details.schedule}</span>
             <span><strong>Availability:</strong> ${spotsLeft} spots left</span>
           </div>
-          <p class="activity-summary">${participantSummary}</p>
+          ${participantsHtml}
         `;
+
+        activityCard.querySelectorAll('.participant-remove').forEach((btn) => {
+          btn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const activity = btn.getAttribute('data-activity');
+            const email = decodeURIComponent(btn.getAttribute('data-email'));
+
+            try {
+              const resp = await fetch(`/activities/${encodeURIComponent(activity)}/participants?email=${encodeURIComponent(email)}`, { method: 'DELETE' });
+              const data = await resp.json();
+
+              if (resp.ok) {
+                showUndoMessage(`已移除 ${prettifyParticipantName(email)}`, activity, email);
+                fetchActivities();
+              } else {
+                showMessage(data.detail || '未能取消注册，请重试', 'error');
+              }
+            } catch (err) {
+              console.error('Error unregistering participant:', err);
+              showMessage('取消注册失败，请稍后重试', 'error');
+            }
+          });
+        });
 
         activitiesList.appendChild(activityCard);
 

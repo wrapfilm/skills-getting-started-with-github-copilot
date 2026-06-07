@@ -157,15 +157,92 @@ footer {
   font-size: 0.95rem;
 }
 
-.activity-summary {
-  margin: 12px 0 0;
-  padding: 14px 16px;
-  background: #f4f8ff;
-  border: 1px solid #dbe7f4;
-  border-radius: 16px;
-  color: #1e3a64;
-  font-size: 0.96rem;
-  line-height: 1.5;
+.participants-section {
+  margin-top: 18px;
+  padding: 18px 20px;
+  background: rgba(227, 238, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 18px;
+}
+
+.participants-section h5 {
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #1e3a8a;
+}
+
+.participants-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  color: #334155;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.participant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.participant-item span {
+  font-weight: 500;
+}
+
+.participant-remove {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.95);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.participant-remove:hover {
+  background: rgba(251, 203, 203, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(220, 38, 38, 0.15);
+}
+
+.undo-button {
+  margin-left: 14px;
+  border: none;
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.undo-button:hover {
+  background: rgba(59, 130, 246, 0.18);
+  transform: translateY(-1px);
+}
+
+.participants-section.no-participants {
+  background: rgba(248, 250, 252, 0.95);
+  border-color: rgba(209, 213, 219, 0.5);
+}
+
+.participants-section.no-participants p {
+  margin: 0;
+  color: #475569;
+  font-style: italic;
 }
 
 .activity-card {
